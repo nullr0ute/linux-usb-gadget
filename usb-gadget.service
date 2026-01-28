@@ -1,0 +1,15 @@
+[Unit]
+Description=USB gadget service
+After=NetworkManager.service
+
+[Service]
+Type=simple
+Environment=USBG_DEV=usb0
+ExecStart=/usr/libexec/linux-usb-gadget
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=usb-gadget.target
