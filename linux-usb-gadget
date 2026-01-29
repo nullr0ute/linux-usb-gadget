@@ -28,37 +28,46 @@ fi
 
 # Use the Distribution name if we can determine it
 if [ -f ${sysconfdir}/os-release ]; then
-	USB_MAN=`grep '^NAME' /etc/os-release | awk -F= '{print $2}'`
+	USB_MAN=$(grep '^NAME' /etc/os-release | awk -F= '{print $2}'| cut -d '"' -f 2)
 	echo "$USB_MAN"
 fi
 
 # Need to make all the features configurable - Network, console maybe storage
 
-# Get the UDC address
-UDCDEV=`ls /sys/class/udc`
+# Get the UDC device identifier
+UDCDEV=$(ls /sys/class/udc)
 
 # Initial USB device configuration
 modprobe libcomposite
 mkdir -p /sys/kernel/config/usb_gadget/g0
 cd /sys/kernel/config/usb_gadget/g0
 
-echo $USB_VENDOR > idVendor
-echo $USB_PROD > idProduct
+echo $USB_VENDID > idVendor
+echo $USB_PRODID > idProduct
 
 mkdir strings/0x409
 echo $USB_MAN > strings/0x409/manufacturer
 echo $USB_PROD > strings/0x409/product
 
 mkdir configs/c.1
-if [ "$UDC_NET" = true ]; then
-	mkdir -p functions/ecm.usb0
-	ln -s functions/ecm.usb0/ configs/c.1/
-fi
 if [ "$UDC_CON" = true ]; then
 	mkdir -p functions/acm.usb0
 	ln -s functions/acm.usb0/ configs/c.1/
+fi
+if [ "$UDC_NET" = true ]; then
+	mkdir -p functions/ecm.usb0
+	ln -s functions/ecm.usb0/ configs/c.1/
 fi
 
 echo $UDCDEV > UDC
 cd -
 # End device configuration
+
+# Console configuration
+if [ "$UDC_CON" = true ]; then
+	systemctl enable --now serial-getty@ttyGS0.service
+fi
+
+# Network configuration
+if [ "$UDC_NET" = true ]; then
+fi
